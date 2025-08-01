@@ -1,0 +1,3 @@
+[submodule "src/libh8300h"]
+	path = src/libh8300h
+	url = https://github.com/celerizer/libh8300h
