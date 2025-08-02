@@ -5,6 +5,7 @@
 #include <libdragon.h>
 #include "libcart/cart.h"
 
+#include "libh8300h/devices/bma150.h"
 #include "libh8300h/devices/buttons.h"
 #include "libh8300h/devices/eeprom.h"
 #include "libh8300h/devices/lcd.h"
@@ -18,6 +19,7 @@ typedef struct
 {
   h8_system_t system;
   h8_lcd_t *lcd;
+  h8_device_t *bma150;
   h8_buttons_t *buttons;
   h8_device_t *eeprom;
   h8_device_t *led;
@@ -80,13 +82,16 @@ static h8_device_t *h8lr_find_device(unsigned type)
 static void h8u_emu_input(void)
 {
   joypad_buttons_t buttons;
+  h8_u16 shake;
 
   joypad_poll();
   buttons = joypad_get_buttons(JOYPAD_PORT_1);
+  shake = buttons.z ? 0x3ff : 0x000;
 
   ctx.buttons->buttons[H8_BUTTON_MAIN] = buttons.a;
   ctx.buttons->buttons[H8_BUTTON_LEFT] = buttons.d_left;
   ctx.buttons->buttons[H8_BUTTON_RIGHT] = buttons.d_right;
+  h8_bma150_set_axis(ctx.bma150, shake, 0, shake);
 }
 
 static h8_u16 h8u_colors[4] =
@@ -180,6 +185,10 @@ int main(void)
   if (device)
     ctx.eeprom = device;
 
+  device = h8lr_find_device(H8_DEVICE_BMA150);
+  if (device)
+    ctx.bma150 = device;
+
   /* Load files */
   h8u_load_file(ctx.system.vmem.raw, 48 * 1024, "ntr032.bin");
   h8u_load_file(ctx.eeprom->data, 64 * 1024, "ntr032-eep.bin");
@@ -193,11 +202,13 @@ int main(void)
     pfu_menu_switch_roms();
   */
 
+  console_close();
+
   while (64)
   {
     int x, y;
     unsigned i;
-#if 1
+
     h8u_emu_input();
 
     for (i = 0; i < 8000; i++)
@@ -217,10 +228,7 @@ int main(void)
       }
     }
     h8u_video_render();
-#else
-    h8_step(&ctx.system);
-    printf("PC: %04X\n", ctx.system.cpu.pc);
-#endif
+
     ctx.frames++;
   }
 }
