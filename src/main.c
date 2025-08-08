@@ -110,13 +110,10 @@ static const rdpq_blitparms_t h8u_1_1_480p_params = {
 static void h8u_video_render(void)
 {
   surface_t *disp = display_get();
-  
+
   rdpq_attach_clear(disp, NULL);
   rdpq_set_mode_standard();
-  rdpq_tex_blit(&ctx.video_frame,
-                32,
-                48,
-                &h8u_1_1_480p_params);
+  rdpq_tex_blit(&ctx.video_frame, 32, 48, &h8u_1_1_480p_params);
   rdpq_detach_show();
 }
 
@@ -137,27 +134,6 @@ int main(void)
 
   /* Initialize assets */
   dfs_init(DFS_DEFAULT_LOCATION);
-
-  /* Initialize fonts
-  rdpq_font_t *font1 = rdpq_font_load("rom:/Tuffy_Bold.font64");
-  rdpq_text_register_font(1, font1);
-  rdpq_font_style(font1, 0, &(rdpq_fontstyle_t){
-	                .color = RGBA32(255, 255, 255, 255),
-	                .outline_color = RGBA32(0, 0, 0, 255)});
-  rdpq_font_t *font2 = rdpq_font_load("rom:/Tuffy_Bold.font64");
-  rdpq_text_register_font(2, font2);
-  rdpq_font_style(font2, 0, &(rdpq_fontstyle_t){
-	                .color = RGBA32(0, 0, 0, 127),
-	                .outline_color = RGBA32(0, 0, 0, 127)});
-  rdpq_font_t *font3 = rdpq_font_load_builtin(FONT_BUILTIN_DEBUG_VAR);
-  rdpq_text_register_font(3, font3);
-
-  ctx.icon = sprite_load("rom:/icon.sprite");
-  */
-
-  /* Initialize audio
-  audio_init(PF_SOUND_FREQUENCY, 4);
-  */
 
   /* Initialize emulator */
   h8_system_init(&ctx.system, H8_SYSTEM_NTR_032);
@@ -187,21 +163,16 @@ int main(void)
   h8u_load_file(ctx.eeprom->data, 64 * 1024, "ntr032-eep.bin");
   h8_init(&ctx.system);
 
-
-  /* If loaded as plugin, jump to loaded ROM, otherwise load ROM menu
-  if (pfu_plugin_read_rom())
-    pfu_ctx_switch();
-  else
-    pfu_menu_switch_roms();
-  */
-
-  console_close();  
-
   /* Initialize video */
+  console_close();
   display_init(RESOLUTION_640x480, DEPTH_16_BPP, 2, GAMMA_NONE, FILTERS_RESAMPLE);
   rdpq_init();
   ctx.video_buffer = (unsigned short*)malloc_uncached_aligned(64, SCREEN_WIDTH * SCREEN_HEIGHT * 2);
   ctx.video_frame = surface_make_linear(ctx.video_buffer, FMT_RGBA16, SCREEN_WIDTH, SCREEN_HEIGHT);
+
+  /* Initialize fonts */
+  rdpq_font_t *font = rdpq_font_load_builtin(FONT_BUILTIN_DEBUG_VAR);
+  rdpq_text_register_font(1, font);
 
   while (64)
   {
