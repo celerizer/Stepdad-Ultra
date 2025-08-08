@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <malloc.h>
 #include <string.h>
+#include <errno.h>
 
 #include <libdragon.h>
 #include "libcart/cart.h"
@@ -37,7 +38,7 @@ static int h8u_load_file(void *dst, unsigned size, const char *path)
   FILE *file;
   char fullpath[256];
 
-  snprintf(fullpath, sizeof(fullpath), "rom:/%s", path);
+  snprintf(fullpath, sizeof(fullpath), "rom:/roms/%s", path);
   file = fopen(fullpath, "r");
   if (file)
   {
@@ -63,7 +64,8 @@ static int h8u_load_file(void *dst, unsigned size, const char *path)
       return 1;
     }
   }
-  printf("Failed to open file %s\n", fullpath);
+  printf("Failed to open file %s: %s\n", fullpath, strerror(errno));
+  exit(0);
 
   return 0;
 }
@@ -124,24 +126,16 @@ int main(void)
 
   memset(&ctx, 0, sizeof(ctx));
 
-  console_init();
-  console_set_render_mode(RENDER_AUTOMATIC);
-
   /* Initialize controller */
   joypad_init();
-  
-  /* Initialize video */
-  display_init(RESOLUTION_640x480, DEPTH_16_BPP, 2, GAMMA_NONE, FILTERS_RESAMPLE);
-  rdpq_init();
-  ctx.video_buffer = (unsigned short*)malloc_uncached_aligned(64, SCREEN_WIDTH * SCREEN_HEIGHT * 2);
-  ctx.video_frame = surface_make_linear(ctx.video_buffer, FMT_RGBA16, SCREEN_WIDTH, SCREEN_HEIGHT);
 
+  console_init();
+  console_set_render_mode(RENDER_AUTOMATIC);
   console_clear();
   printf("Stepdad tests on N64...\n");
   h8_test();
 
   /* Initialize assets */
-  cart_init();
   dfs_init(DFS_DEFAULT_LOCATION);
 
   /* Initialize fonts
@@ -160,7 +154,6 @@ int main(void)
 
   ctx.icon = sprite_load("rom:/icon.sprite");
   */
-  debug_init_sdfs("sd:/", -1);
 
   /* Initialize audio
   audio_init(PF_SOUND_FREQUENCY, 4);
@@ -202,7 +195,13 @@ int main(void)
     pfu_menu_switch_roms();
   */
 
-  console_close();
+  console_close();  
+
+  /* Initialize video */
+  display_init(RESOLUTION_640x480, DEPTH_16_BPP, 2, GAMMA_NONE, FILTERS_RESAMPLE);
+  rdpq_init();
+  ctx.video_buffer = (unsigned short*)malloc_uncached_aligned(64, SCREEN_WIDTH * SCREEN_HEIGHT * 2);
+  ctx.video_frame = surface_make_linear(ctx.video_buffer, FMT_RGBA16, SCREEN_WIDTH, SCREEN_HEIGHT);
 
   while (64)
   {
